@@ -17,7 +17,7 @@ make clean : cleans .o and .exe files
 To run server, you can specify the listening port(s) like :
 ```
 ./build/server 5001 5002 5003
-``
+```
 The above command makes server to listen on port 5001,5002 and 5003
 <br/>
 
