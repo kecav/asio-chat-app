@@ -7,4 +7,5 @@ make clean
 ```
 
 make : *makes and stores .o and .exe file in ./build directory*
+
 make clean : *cleans .o and .exe files* 
