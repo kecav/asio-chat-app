@@ -9,12 +9,12 @@
 #include "../common/message.hpp"
 #include "../asio-1.26.0/include/asio.hpp"
 
-
+using namespace std;
 using asio::ip::tcp;
 
 //----------------------------------------------------------------------
 
-typedef std::deque<chat_message> chat_message_queue;
+typedef deque<chat_message> chat_message_queue;
 
 //----------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ public:
   virtual void deliver(const chat_message& msg) = 0;
 };
 
-typedef std::shared_ptr<chat_participant> chat_participant_ptr;
+typedef shared_ptr<chat_participant> chat_participant_ptr;
 
 //----------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ public:
   }
 
 private:
-  std::set<chat_participant_ptr> participants_;
+  set<chat_participant_ptr> participants_;
   enum { max_recent_msgs = 100 };
   chat_message_queue recent_msgs_;
 };
@@ -64,11 +64,11 @@ private:
 
 class chat_session
   : public chat_participant,
-    public std::enable_shared_from_this<chat_session>
+    public enable_shared_from_this<chat_session>
 {
 public:
   chat_session(tcp::socket socket, chat_room& room)
-    : socket_(std::move(socket)),
+    : socket_(move(socket)),
       room_(room)
   {
   }
@@ -95,7 +95,7 @@ private:
     auto self(shared_from_this());
     asio::async_read(socket_,
         asio::buffer(read_msg_.data(), chat_message::header_length),
-        [this, self](std::error_code ec, std::size_t /*length*/)
+        [this, self](error_code ec, size_t /*length*/)
         {
           if (!ec && read_msg_.decode_header())
           {
@@ -113,7 +113,7 @@ private:
     auto self(shared_from_this());
     asio::async_read(socket_,
         asio::buffer(read_msg_.body(), read_msg_.body_length()),
-        [this, self](std::error_code ec, std::size_t /*length*/)
+        [this, self](error_code ec, size_t /*length*/)
         {
           if (!ec)
           {
@@ -133,7 +133,7 @@ private:
     asio::async_write(socket_,
         asio::buffer(write_msgs_.front().data(),
           write_msgs_.front().length()),
-        [this, self](std::error_code ec, std::size_t /*length*/)
+        [this, self](error_code ec, size_t /*length*/)
         {
           if (!ec)
           {
@@ -172,11 +172,11 @@ private:
   void do_accept()
   {
     acceptor_.async_accept(
-        [this](std::error_code ec, tcp::socket socket)
+        [this](error_code ec, tcp::socket socket)
         {
           if (!ec)
           {
-            std::make_shared<chat_session>(std::move(socket), room_)->start();
+            make_shared<chat_session>(move(socket), room_)->start();
           }
 
           do_accept();
@@ -195,24 +195,29 @@ int main(int argc, char* argv[])
   {
     if (argc < 2)
     {
-      std::cerr << "Usage: chat_server <port> [<port> ...]\n";
+      cerr << "Usage: chat_server <port> [<port> ...]\n";
       return 1;
     }
 
     asio::io_context io_context;
+    list<chat_server> servers;
 
-    std::list<chat_server> servers;
     for (int i = 1; i < argc; ++i)
     {
-      tcp::endpoint endpoint(tcp::v4(), std::atoi(argv[i]));
+      int port = atoi(argv[i]);
+
+      tcp::endpoint endpoint(tcp::v4(), port);
       servers.emplace_back(io_context, endpoint);
+      
+      cout << "Server now running on port : " << port << endl;
     }
 
     io_context.run();
+
   }
-  catch (std::exception& e)
+  catch (exception& e)
   {
-    std::cerr << "Exception: " << e.what() << "\n";
+    cerr << "Exception: " << e.what() << "\n";
   }
 
   return 0;

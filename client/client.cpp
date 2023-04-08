@@ -6,9 +6,10 @@
 #include "../common/message.hpp"
 #include "../asio-1.26.0/include/asio.hpp"
 
+using namespace std;
 using asio::ip::tcp;
 
-typedef std::deque<chat_message> chat_message_queue;
+typedef deque<chat_message> chat_message_queue;
 
 class chat_client
 {
@@ -44,7 +45,7 @@ private:
   void do_connect(const tcp::resolver::results_type& endpoints)
   {
     asio::async_connect(socket_, endpoints,
-        [this](std::error_code ec, tcp::endpoint)
+        [this](error_code ec, tcp::endpoint)
         {
           if (!ec)
           {
@@ -57,7 +58,7 @@ private:
   {
     asio::async_read(socket_,
         asio::buffer(read_msg_.data(), chat_message::header_length),
-        [this](std::error_code ec, std::size_t /*length*/)
+        [this](error_code ec, size_t /*length*/)
         {
           if (!ec && read_msg_.decode_header())
           {
@@ -74,12 +75,12 @@ private:
   {
     asio::async_read(socket_,
         asio::buffer(read_msg_.body(), read_msg_.body_length()),
-        [this](std::error_code ec, std::size_t /*length*/)
+        [this](error_code ec, size_t /*length*/)
         {
           if (!ec)
           {
-            std::cout.write(read_msg_.body(), read_msg_.body_length());
-            std::cout << "\n";
+            cout.write(read_msg_.body(), read_msg_.body_length());
+            cout << "\n";
             do_read_header();
           }
           else
@@ -94,7 +95,7 @@ private:
     asio::async_write(socket_,
         asio::buffer(write_msgs_.front().data(),
           write_msgs_.front().length()),
-        [this](std::error_code ec, std::size_t /*length*/)
+        [this](error_code ec, size_t /*length*/)
         {
           if (!ec)
           {
@@ -124,7 +125,7 @@ int main(int argc, char* argv[])
   {
     if (argc != 3)
     {
-      std::cerr << "Usage: chat_client <host> <port>\n";
+      cerr << "Usage: chat_client <host> <port>\n";
       return 1;
     }
 
@@ -134,14 +135,15 @@ int main(int argc, char* argv[])
     auto endpoints = resolver.resolve(argv[1], argv[2]);
     chat_client c(io_context, endpoints);
 
-    std::thread t([&io_context](){ io_context.run(); });
+    thread t([&io_context](){ io_context.run(); });
 
     char line[chat_message::max_body_length + 1];
-    while (std::cin.getline(line, chat_message::max_body_length + 1))
+    while (cin.getline(line, chat_message::max_body_length + 1))
     {
+      // cout << "this : " <<line << endl;
       chat_message msg;
-      msg.body_length(std::strlen(line));
-      std::memcpy(msg.body(), line, msg.body_length());
+      msg.body_length(strlen(line));
+      memcpy(msg.body(), line, msg.body_length());
       msg.encode_header();
       c.write(msg);
     }
@@ -149,9 +151,9 @@ int main(int argc, char* argv[])
     c.close();
     t.join();
   }
-  catch (std::exception& e)
+  catch (exception& e)
   {
-    std::cerr << "Exception: " << e.what() << "\n";
+    cerr << "Exception: " << e.what() << "\n";
   }
 
   return 0;
